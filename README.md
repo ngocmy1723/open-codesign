@@ -57,6 +57,14 @@ chmod +x open-codesign-*.AppImage
 
 See [`docs/ROADMAP.md`](./docs/ROADMAP.md). MVP success criterion: replicate every public Claude Design demo.
 
+## CI
+
+PR / main pushes run lint + typecheck + test on ubuntu-latest (1-2 min feedback).
+Cross-platform builds happen on tag releases (`v*.*.*`) via `release.yml` (mac/win/linux).
+
+Local pre-push hook (auto-installed via `pnpm install`) runs typecheck + lint in seconds
+to fail fast before pushing.
+
 ## License
 
 Apache-2.0
