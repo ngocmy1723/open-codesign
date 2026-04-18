@@ -177,7 +177,7 @@ export function Sidebar({ prompt, setPrompt, onSubmit }: SidebarProps) {
           messages.map((m, i) => (
             <div
               key={`${m.role}-${i}-${m.content.slice(0, 8)}`}
-              className={`px-[var(--space-4)] py-[var(--space-3)] rounded-[var(--radius-lg)] text-[var(--text-sm)] leading-[var(--leading-body)] ${
+              className={`px-[var(--space-4)] py-[var(--space-3)] rounded-[var(--radius-lg)] text-[var(--text-sm)] leading-[var(--leading-body)] whitespace-pre-wrap break-words ${
                 m.role === 'user'
                   ? 'bg-[var(--color-accent-soft)] text-[var(--color-text-primary)] border border-[var(--color-accent-muted)]'
                   : 'bg-[var(--color-surface)] border border-[var(--color-border-muted)] text-[var(--color-text-primary)]'
