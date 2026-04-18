@@ -14,6 +14,8 @@ Tracking of architectural-decision-blocking investigations.
 | 5 | pi-ai capability boundary | Use pi-ai, pin version, wrap 6 missing capabilities in `packages/providers`; do not fork | [05](research/05-pi-ai-boundary.md) |
 | 6 | API key onboarding UX | 3-step flow (welcome path picker / paste with auto-detect / model defaults); zero-config path mandatory; OS keychain storage | [06](research/06-api-onboarding-ux.md) |
 | 7 | First-5-minute easy-to-use patterns | Default system prompt (Tailwind + shadcn + Lucide + no indigo); OpenRouter free-tier first-run path; streaming + 200 ms skeleton | [07](research/07-first-5-minutes.md) |
+| 8 | SEO + AI-SEO + GitHub discoverability | llms.txt + llms-full.txt; Schema.org JSON-LD; comparison page as top GEO content; 20 topics; CITATION.cff; allow all AI crawlers | [08](research/08-seo-ai-seo.md) |
+| 9 | Polish + parity gap backlog | Top 10 v0.1 must-do (boundaries, cancellation, CSP, singletons, schema versioning); 5 next worktrees identified | [09](research/09-polish-parity-backlog.md) |
 
 ## In flight
 
