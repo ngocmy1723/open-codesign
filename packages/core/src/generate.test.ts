@@ -1006,6 +1006,38 @@ describe('composeSystemPrompt()', () => {
     expect(prompt).not.toContain('.ios-status-bar');
   });
 
+  it('create mode whitelists cdnjs.cloudflare.com for permitted JS libraries', () => {
+    const prompt = composeSystemPrompt({ mode: 'create' });
+    expect(prompt).toContain('cdnjs.cloudflare.com');
+    // Pinned-version format must be spelled out so the model emits exact-version URLs.
+    expect(prompt).toContain(
+      'https://cdnjs.cloudflare.com/ajax/libs/<lib>/<exact-version>/<file>.min.js',
+    );
+    // Open hosts must be explicitly forbidden so the model does not fall back to them.
+    expect(prompt).toContain('esm.sh');
+    expect(prompt).toContain('jsdelivr');
+    expect(prompt).toContain('unpkg');
+  });
+
+  it('create mode lists the six approved chart / data libraries using their exact cdnjs slugs', () => {
+    const prompt = composeSystemPrompt({ mode: 'create' });
+    // Verified against https://api.cdnjs.com/libraries/<slug>?fields=name on 2026-04-19.
+    // cdnjs slugs are case-sensitive; using the wrong casing returns 404.
+    for (const lib of ['recharts', 'Chart.js', 'd3', 'three.js', 'lodash.js', 'PapaParse']) {
+      expect(prompt, `missing approved cdnjs library: ${lib}`).toContain(lib);
+    }
+    // Common wrong slugs must NOT appear as standalone tokens — they 404 on cdnjs.
+    // We check the bullet-list lines specifically (the explanatory parentheticals
+    // legitimately reference, e.g., "the `.js`").
+    const bulletLines = prompt
+      .split('\n')
+      .filter((line) => /^\s*-\s+`[^`]+`/.test(line) && line.includes('—'));
+    const bullets = bulletLines.join('\n');
+    expect(bullets).not.toMatch(/`chart\.js`/);
+    expect(bullets).not.toMatch(/`lodash`/);
+    expect(bullets).not.toMatch(/`papaparse`/);
+  });
+
   it('create mode includes the EDITMODE protocol section', () => {
     const prompt = composeSystemPrompt({ mode: 'create' });
     expect(prompt).toContain('EDITMODE protocol');
