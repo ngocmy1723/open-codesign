@@ -426,6 +426,31 @@
     "applying": "Applying…",
     "applyChange": "Apply change"
   },
+  "commentBubble": {
+    "title": "Comment on",
+    "close": "Close comment bubble",
+    "placeholder": "Describe the change, or leave a note for yourself…",
+    "saveNote": "Comment",
+    "sendToClaude": "Send to Claude",
+    "saving": "Saving…",
+    "sending": "Sending…"
+  },
+  "pinOverlay": {
+    "note": "Note {{n}}",
+    "edit": "Edit {{n}}"
+  },
+  "commentChip": {
+    "dismiss": "Dismiss pending edit",
+    "empty": "No pending edits"
+  },
+  "commentsTab": {
+    "empty": "Click any element in the preview while comment mode is on to leave a note or an edit instruction.",
+    "pendingEdits": "Pending edits",
+    "notes": "Notes",
+    "appliedEdits": "Applied edits",
+    "delete": "Delete comment",
+    "atSnapshot": "@ snapshot {{n}}"
+  },
   "disabledReason": {
     "typePromptToSend": "Type a prompt to start",
     "generatingInProgress": "Generation in progress",
