@@ -1,6 +1,8 @@
 import { i18n } from '@open-codesign/i18n';
 import {
+  type ChatAppendInput,
   type ChatMessage,
+  type ChatMessageRow,
   type Design,
   type LocalInputFile,
   type ModelRef,
@@ -52,6 +54,11 @@ export type Theme = 'light' | 'dark';
 export type AppView = 'hub' | 'workspace' | 'settings';
 export type HubTab = 'recent' | 'your' | 'examples' | 'designSystems';
 export type InteractionMode = 'default' | 'comment';
+export type SidebarTab = 'chat' | 'comments';
+
+/** Builtin skill chip ids shown above the prompt input. */
+export const BUILTIN_SKILLS = ['dashboard', 'mobile-mock', 'marketing', 'editorial'] as const;
+export type BuiltinSkillId = (typeof BUILTIN_SKILLS)[number];
 
 export type PreviewViewport = 'desktop' | 'tablet' | 'mobile';
 
@@ -115,6 +122,13 @@ interface CodesignState {
   previewZoom: number;
   interactionMode: InteractionMode;
 
+  // Sidebar v2 chat state
+  chatMessages: ChatMessageRow[];
+  chatLoaded: boolean;
+  sidebarTab: SidebarTab;
+  sidebarCollapsed: boolean;
+  attachedSkills: BuiltinSkillId[];
+
   loadConfig: () => Promise<void>;
   completeOnboarding: (next: OnboardingState) => void;
   setConnectionStatus: (status: ConnectionStatus) => void;
@@ -171,6 +185,15 @@ interface CodesignState {
 
   pushToast: (toast: Omit<Toast, 'id'>) => string;
   dismissToast: (id?: string) => void;
+
+  // Sidebar v2 chat actions
+  loadChatForCurrentDesign: () => Promise<void>;
+  appendChatMessage: (input: ChatAppendInput) => Promise<ChatMessageRow | null>;
+  clearChatLocal: () => void;
+  setSidebarTab: (tab: SidebarTab) => void;
+  setSidebarCollapsed: (collapsed: boolean) => void;
+  toggleAttachedSkill: (skill: BuiltinSkillId) => void;
+  clearAttachedSkills: () => void;
 }
 
 const THEME_STORAGE_KEY = 'open-codesign:theme';
@@ -594,6 +617,20 @@ function applyGenerateSuccess(
     if (designId) {
       const artifact = artifactFromResult(firstArtifact, prompt, assistantMessage);
       void persistDesignState(get, designId, get().messages, get().previewHtml, artifact);
+      // Sidebar v2: append chat_messages row so the new artifact renders in
+      // the chat pane. Assistant prose goes first, then artifact card.
+      if (assistantMessage.trim().length > 0) {
+        void get().appendChatMessage({
+          designId,
+          kind: 'assistant_text',
+          payload: { text: assistantMessage },
+        });
+      }
+      void get().appendChatMessage({
+        designId,
+        kind: 'artifact_delivered',
+        payload: { createdAt: new Date().toISOString() },
+      });
     }
     if (rejectedUsageFields.length > 0) {
       const detail = rejectedUsageFields.join(', ');
@@ -632,6 +669,14 @@ function applyGenerateError(
     lastError: msg,
     generationStage: 'error' as GenerationStage,
   }));
+  const designId = get().currentDesignId;
+  if (designId) {
+    void get().appendChatMessage({
+      designId,
+      kind: 'error',
+      payload: { message: msg },
+    });
+  }
   get().pushToast({
     variant: 'error',
     title: tr('notifications.generationFailed'),
@@ -740,6 +785,12 @@ export const useCodesignStore = create<CodesignState>((set, get) => ({
   selectedElement: null,
   previewZoom: 100,
   interactionMode: 'default' as InteractionMode,
+
+  chatMessages: [],
+  chatLoaded: false,
+  sidebarTab: 'chat' as SidebarTab,
+  sidebarCollapsed: false,
+  attachedSkills: [],
 
   clearIframeErrors() {
     set({ iframeErrors: [] });
@@ -873,6 +924,8 @@ export const useCodesignStore = create<CodesignState>((set, get) => ({
     const generationId = newId();
     const history = get().messages;
     const isFirstPrompt = history.length === 0;
+    const designIdAtStart = get().currentDesignId;
+    const attachedSkills = [...get().attachedSkills];
     set((s) => ({
       messages: [...s.messages, { role: 'user', content: request.prompt }],
       isGenerating: true,
@@ -884,6 +937,22 @@ export const useCodesignStore = create<CodesignState>((set, get) => ({
       selectedElement: null,
       iframeErrors: [],
     }));
+
+    // Append to the new chat_messages table so Sidebar v2 reflects activity
+    // even before Workstream B starts emitting streaming tool events.
+    if (designIdAtStart) {
+      void get().appendChatMessage({
+        designId: designIdAtStart,
+        kind: 'user',
+        payload: {
+          text: request.prompt,
+          ...(attachedSkills.length > 0 ? { attachedSkills } : {}),
+        },
+      });
+    }
+    // Skills were consumed by this turn — clear the chip selection so the
+    // next prompt starts clean. Users re-toggle if they still want them.
+    if (attachedSkills.length > 0) get().clearAttachedSkills();
 
     triggerAutoRenameIfFirst(get, isFirstPrompt, request.prompt);
 
@@ -1234,8 +1303,11 @@ export const useCodesignStore = create<CodesignState>((set, get) => ({
         selectedElement: null,
         lastPromptInput: null,
         designsViewOpen: false,
+        chatMessages: [],
+        chatLoaded: false,
       });
       await get().loadDesigns();
+      void get().loadChatForCurrentDesign();
       return design;
     } catch (err) {
       const msg = err instanceof Error ? err.message : tr('errors.unknown');
@@ -1276,7 +1348,10 @@ export const useCodesignStore = create<CodesignState>((set, get) => ({
         selectedElement: null,
         lastPromptInput: null,
         designsViewOpen: false,
+        chatMessages: [],
+        chatLoaded: false,
       });
+      void get().loadChatForCurrentDesign();
     } catch (err) {
       const msg = err instanceof Error ? err.message : tr('errors.unknown');
       get().pushToast({
@@ -1396,6 +1471,72 @@ export const useCodesignStore = create<CodesignState>((set, get) => ({
       return;
     }
     set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
+  },
+
+  async loadChatForCurrentDesign() {
+    if (!window.codesign) return;
+    const designId = get().currentDesignId;
+    if (!designId) {
+      set({ chatMessages: [], chatLoaded: true });
+      return;
+    }
+    try {
+      // Seed existing designs' chat history from snapshots on first open.
+      await window.codesign.chat.seedFromSnapshots(designId);
+      const rows = await window.codesign.chat.list(designId);
+      // Guard against a design switch happening while the IPC was in flight —
+      // we'd otherwise render the previous design's chat into the new one.
+      if (get().currentDesignId !== designId) return;
+      set({ chatMessages: rows, chatLoaded: true });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : tr('errors.unknown');
+      console.warn('[open-codesign] loadChatForCurrentDesign failed:', msg);
+      set({ chatLoaded: true });
+    }
+  },
+
+  async appendChatMessage(input: ChatAppendInput) {
+    if (!window.codesign) return null;
+    try {
+      const row = await window.codesign.chat.append(input);
+      // Only merge into state if the append belongs to the current design —
+      // a background append to a previous design must not pollute the view.
+      if (get().currentDesignId === input.designId) {
+        set((s) => ({ chatMessages: [...s.chatMessages, row] }));
+      }
+      return row;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : tr('errors.unknown');
+      console.warn('[open-codesign] appendChatMessage failed:', msg);
+      return null;
+    }
+  },
+
+  clearChatLocal() {
+    set({ chatMessages: [], chatLoaded: false });
+  },
+
+  setSidebarTab(tab: SidebarTab) {
+    set({ sidebarTab: tab });
+  },
+
+  setSidebarCollapsed(collapsed: boolean) {
+    set({ sidebarCollapsed: collapsed });
+  },
+
+  toggleAttachedSkill(skill: BuiltinSkillId) {
+    set((s) => {
+      const has = s.attachedSkills.includes(skill);
+      return {
+        attachedSkills: has
+          ? s.attachedSkills.filter((x) => x !== skill)
+          : [...s.attachedSkills, skill],
+      };
+    });
+  },
+
+  clearAttachedSkills() {
+    set({ attachedSkills: [] });
   },
 }));
 
