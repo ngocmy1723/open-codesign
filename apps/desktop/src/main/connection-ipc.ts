@@ -510,6 +510,104 @@ export function registerConnectionIpc(): void {
     return { ok: true };
   });
 
+  // Fetch available models for a stored provider by ID — credentials resolved
+  // from the encrypted config so the renderer never touches plaintext keys.
+  ipcMain.handle(
+    'models:v1:list-for-provider',
+    async (_e, raw: unknown): Promise<ModelsListResponse> => {
+      if (typeof raw !== 'string' || raw.length === 0) {
+        return {
+          ok: false,
+          code: 'IPC_BAD_INPUT',
+          message: 'list-for-provider expects a provider id string',
+          hint: 'Internal error — missing provider id',
+        };
+      }
+
+      const cfg = getCachedConfig();
+      if (cfg === null) {
+        return {
+          ok: false,
+          code: 'IPC_BAD_INPUT',
+          message: 'No configuration loaded',
+          hint: 'Complete onboarding first',
+        };
+      }
+      const entry = cfg.providers[raw];
+      if (entry === undefined) {
+        return {
+          ok: false,
+          code: 'IPC_BAD_INPUT',
+          message: `Provider "${raw}" not found in config`,
+          hint: 'Re-add the provider from Settings',
+        };
+      }
+
+      let apiKey: string;
+      try {
+        apiKey = getApiKeyForProvider(raw);
+      } catch (err) {
+        return {
+          ok: false,
+          code: 'IPC_BAD_INPUT',
+          message: err instanceof Error ? err.message : String(err),
+          hint: 'Add an API key for this provider',
+        };
+      }
+
+      const cached = getCachedModels(raw, entry.baseUrl, apiKey);
+      if (cached !== null) return { ok: true, models: cached };
+
+      const { url } = buildEndpointForWire(entry.wire, entry.baseUrl);
+      const headers = buildAuthHeadersForWire(entry.wire, apiKey, entry.httpHeaders);
+
+      let res: Response;
+      try {
+        res = await fetchWithTimeout(url, { method: 'GET', headers });
+      } catch (err) {
+        return {
+          ok: false,
+          code: 'NETWORK',
+          message: err instanceof Error ? err.message : String(err),
+          hint: 'Cannot reach provider /models endpoint',
+        };
+      }
+
+      if (!res.ok) {
+        return {
+          ok: false,
+          code: 'HTTP',
+          message: `HTTP ${res.status}`,
+          hint: 'Model list request failed',
+        };
+      }
+
+      let body: unknown;
+      try {
+        body = await res.json();
+      } catch {
+        return {
+          ok: false,
+          code: 'PARSE',
+          message: 'Invalid JSON in response',
+          hint: 'Provider returned non-JSON',
+        };
+      }
+
+      const ids = extractModelIds(body);
+      if (ids === null) {
+        return {
+          ok: false,
+          code: 'PARSE',
+          message: 'Unexpected models response shape',
+          hint: 'Check provider /models endpoint compatibility',
+        };
+      }
+      setCachedModels(raw, entry.baseUrl, apiKey, ids);
+      return { ok: true, models: ids };
+    },
+  );
+
   // ── Wire-agnostic test endpoint (v3 custom providers) ────────────────────
   ipcMain.handle(
     'config:v1:test-endpoint',
