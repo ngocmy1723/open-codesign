@@ -601,7 +601,7 @@ interface ExternalConfigsDetection {
 
 async function runImportCodex(imported: CodexImport): Promise<OnboardingState> {
   if (imported.providers.length === 0) {
-    throw new CodesignError('Codex config has no providers to import', 'CONFIG_MISSING');
+    throw new CodesignError('Codex config has no providers to bring in', 'CONFIG_MISSING');
   }
   const nextProviders: Record<string, ProviderEntry> = { ...(cachedConfig?.providers ?? {}) };
   const nextSecrets = { ...(cachedConfig?.secrets ?? {}) };
@@ -648,7 +648,7 @@ async function runImportCodex(imported: CodexImport): Promise<OnboardingState> {
 
 async function runImportClaudeCode(imported: ClaudeCodeImport): Promise<OnboardingState> {
   if (imported.provider === null) {
-    throw new CodesignError('Claude Code import produced no provider', 'CONFIG_MISSING');
+    throw new CodesignError('Claude Code config produced no provider', 'CONFIG_MISSING');
   }
   const nextProviders: Record<string, ProviderEntry> = { ...(cachedConfig?.providers ?? {}) };
   const nextSecrets = { ...(cachedConfig?.secrets ?? {}) };

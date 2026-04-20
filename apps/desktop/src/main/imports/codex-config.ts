@@ -1,7 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import * as TOML from '@iarna/toml';
 import { type ProviderEntry, type WireApi, detectWireFromBaseUrl } from '@open-codesign/shared';
 
 /**
@@ -34,11 +33,12 @@ type CodexProviderBlock = {
  * block into a v3 `ProviderEntry`. Unknown keys are silently ignored (parse
  * leniently — §8 risk mitigation).
  */
-export function parseCodexConfig(toml: string): CodexImport {
+export async function parseCodexConfig(toml: string): Promise<CodexImport> {
   const warnings: string[] = [];
   let parsed: unknown;
   try {
-    parsed = TOML.parse(toml);
+    const { parse } = await import('smol-toml');
+    parsed = parse(toml);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return {

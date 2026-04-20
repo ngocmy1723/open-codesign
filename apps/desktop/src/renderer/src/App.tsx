@@ -11,7 +11,6 @@ import { Sidebar } from './components/Sidebar';
 import { ToastViewport } from './components/Toast';
 import { TopBar } from './components/TopBar';
 import { useKeyboard } from './hooks/useKeyboard';
-import { Onboarding } from './onboarding';
 import { useCodesignStore } from './store';
 import { HubView } from './views/HubView';
 
@@ -158,10 +157,6 @@ export function App() {
         {t('common.loading')}
       </div>
     );
-  }
-
-  if (config === null || !config.hasKey) {
-    return <Onboarding />;
   }
 
   return (

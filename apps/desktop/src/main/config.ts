@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
-import * as TOML from '@iarna/toml';
+import { parse as parseToml, stringify as stringifyToml } from 'smol-toml';
 import {
   CodesignError,
   type Config,
@@ -35,7 +35,7 @@ export async function readConfig(): Promise<Config | null> {
 
   let parsed: unknown;
   try {
-    parsed = TOML.parse(raw);
+    parsed = parseToml(raw);
   } catch (err) {
     throw new CodesignError(`Config at ${path} is not valid TOML`, 'CONFIG_PARSE_FAILED', {
       cause: err,
@@ -72,7 +72,7 @@ export async function writeConfig(config: Config): Promise<void> {
   const dir = configDir();
   await mkdir(dir, { recursive: true });
   const path = configPath();
-  const body = TOML.stringify(persisted as unknown as TOML.JsonMap);
+  const body = stringifyToml(persisted as Record<string, unknown>);
   await writeFile(path, body, { encoding: 'utf8', mode: 0o600 });
 }
 
