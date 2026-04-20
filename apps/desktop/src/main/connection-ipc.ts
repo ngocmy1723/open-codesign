@@ -148,6 +148,11 @@ export function buildAuthHeadersForWire(
   apiKey: string,
   extraHeaders?: Record<string, string>,
 ): Record<string, string> {
+  if (apiKey.length === 0) {
+    // Keyless provider (e.g. IP-whitelisted proxy) — skip auth, keep extras.
+    const base = wire === 'anthropic' ? { 'anthropic-version': '2023-06-01' } : {};
+    return { ...base, ...(extraHeaders ?? {}) };
+  }
   const base =
     wire === 'anthropic'
       ? {
@@ -349,23 +354,20 @@ function resolveActiveCredentials(): ActiveProviderCredentials | ConnectionTestE
       hint: 'Re-add the provider from Settings',
     };
   }
+  let apiKey: string;
   try {
-    const apiKey = getApiKeyForProvider(active);
-    return {
-      provider: active,
-      wire: entry.wire,
-      apiKey,
-      baseUrl: entry.baseUrl,
-      ...(entry.httpHeaders !== undefined ? { httpHeaders: entry.httpHeaders } : {}),
-    };
-  } catch (err) {
-    return {
-      ok: false,
-      code: 'IPC_BAD_INPUT',
-      message: err instanceof Error ? err.message : String(err),
-      hint: 'Could not read active provider credentials',
-    };
+    apiKey = getApiKeyForProvider(active);
+  } catch {
+    // No stored key — provider may be keyless (IP-whitelisted proxy).
+    apiKey = '';
   }
+  return {
+    provider: active,
+    wire: entry.wire,
+    apiKey,
+    baseUrl: entry.baseUrl,
+    ...(entry.httpHeaders !== undefined ? { httpHeaders: entry.httpHeaders } : {}),
+  };
 }
 
 export function registerConnectionIpc(): void {
@@ -554,13 +556,9 @@ export function registerConnectionIpc(): void {
       let apiKey: string;
       try {
         apiKey = getApiKeyForProvider(raw);
-      } catch (err) {
-        return {
-          ok: false,
-          code: 'IPC_BAD_INPUT',
-          message: err instanceof Error ? err.message : String(err),
-          hint: 'Add an API key for this provider',
-        };
+      } catch {
+        // No stored key — provider may be keyless (IP-whitelisted proxy).
+        apiKey = '';
       }
 
       const cached = getCachedModels(raw, entry.baseUrl, apiKey);
