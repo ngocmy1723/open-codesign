@@ -12,6 +12,7 @@
 
 import { createArtifactParser } from '@open-codesign/artifacts';
 import type { AttachmentContext, CoreLogger, ReferenceUrlContext } from '@open-codesign/core';
+import { remapProviderError } from '@open-codesign/core';
 import { CodexClient } from '@open-codesign/providers/codex';
 import type { CodexTokenStore } from '@open-codesign/providers/codex';
 import type { Artifact, ChatMessage, ModelRef, StoredDesignSystem } from '@open-codesign/shared';
@@ -229,7 +230,7 @@ export async function runCodexGenerate(input: CodexGenerateInput): Promise<Codex
       ms: Date.now() - start,
       message: err instanceof Error ? err.message : String(err),
     });
-    throw err;
+    throw remapProviderError(err, input.model.provider);
   }
 
   log?.info('[codex-generate] step=send_request.ok', { ...ctx, ms: Date.now() - start });
