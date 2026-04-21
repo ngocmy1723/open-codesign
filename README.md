@@ -2,9 +2,9 @@
 
 **简体中文**: [README.zh-CN.md](./README.zh-CN.md)
 
-> Your prompts. Your model. Your laptop. The open-source alternative to Anthropic Claude Design.
+> Your prompts. Your model. Your laptop. A self-hosted alternative to Anthropic Claude Design.
 
-[Website](https://opencoworkai.github.io/open-codesign/) · [Quickstart](#quickstart) · [Docs](https://opencoworkai.github.io/open-codesign/quickstart) · [Contributing](./CONTRIBUTING.md) · [Security](./SECURITY.md)
+[Website](https://opencoworkai.github.io/open-codesign/) · [Quickstart](#quickstart) · [vs Claude Design](https://opencoworkai.github.io/open-codesign/claude-design-alternative) · [Docs](https://opencoworkai.github.io/open-codesign/quickstart) · [Contributing](./CONTRIBUTING.md) · [Security](./SECURITY.md)
 
 <p align="center">
   <img src="https://placehold.co/1200x600/E8E5DE/0E0E10?text=open-codesign+demo" alt="Open CoDesign — prompt to prototype (demo coming soon)" width="900" />
@@ -15,6 +15,11 @@
   <a href="https://github.com/OpenCoworkAI/open-codesign/releases"><img alt="GitHub release" src="https://img.shields.io/github/v/release/OpenCoworkAI/open-codesign?label=release&color=c96442" /></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue" /></a>
   <a href="https://github.com/OpenCoworkAI/open-codesign/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/OpenCoworkAI/open-codesign/ci.yml?label=CI" /></a>
+  <a href="https://github.com/OpenCoworkAI/open-codesign/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/OpenCoworkAI/open-codesign?style=social" /></a>
+</p>
+
+<p align="center">
+  <sub>Topics: <code>ai-design</code> · <code>claude-design-alternative</code> · <code>byok</code> · <code>local-first</code> · <code>electron</code> · <code>multi-model</code> · <code>open-source</code></sub>
 </p>
 
 ---

@@ -2,9 +2,9 @@
 
 **English**: [README.md](./README.md)
 
-> 你的提示词。你的模型。你的电脑。Anthropic Claude Design 的开源替代。
+> 你的提示词。你的模型。你的电脑。Anthropic Claude Design 的自托管替代方案。
 
-[官网](https://opencoworkai.github.io/open-codesign/) · [快速开始](#快速开始) · [贡献指南](./CONTRIBUTING.md) · [安全政策](./SECURITY.md)
+[官网](https://opencoworkai.github.io/open-codesign/) · [快速开始](#快速开始) · [对比 Claude Design](https://opencoworkai.github.io/open-codesign/zh/claude-design-alternative) · [贡献指南](./CONTRIBUTING.md) · [安全政策](./SECURITY.md)
 
 <p align="center">
   <img src="https://placehold.co/1200x600/E8E5DE/0E0E10?text=open-codesign+demo" alt="Open CoDesign — 提示词到原型（演示即将上线）" width="900" />
@@ -15,6 +15,11 @@
   <a href="https://github.com/OpenCoworkAI/open-codesign/releases"><img alt="GitHub release" src="https://img.shields.io/github/v/release/OpenCoworkAI/open-codesign?label=release&color=c96442" /></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-blue" /></a>
   <a href="https://github.com/OpenCoworkAI/open-codesign/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/OpenCoworkAI/open-codesign/ci.yml?label=CI" /></a>
+  <a href="https://github.com/OpenCoworkAI/open-codesign/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/OpenCoworkAI/open-codesign?style=social" /></a>
+</p>
+
+<p align="center">
+  <sub>Topics: <code>ai-design</code> · <code>claude-design-alternative</code> · <code>byok</code> · <code>local-first</code> · <code>electron</code> · <code>multi-model</code> · <code>open-source</code></sub>
 </p>
 
 ---
