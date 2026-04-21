@@ -226,6 +226,30 @@ describe('codex-oauth:v1:login', () => {
     const stored = await getCodexTokenStore().read();
     expect(stored).toBeNull();
   });
+
+  it('rejects login when exchangeCode returns a null accountId', async () => {
+    waitForCodeMock.mockImplementation(async (expectedState: string) => ({
+      code: 'AUTH_CODE',
+      state: expectedState,
+    }));
+    exchangeCodeMock.mockResolvedValue({
+      accessToken: 'new-access',
+      refreshToken: 'new-refresh',
+      idToken: makeIdToken({ email: 'user@example.com' }),
+      expiresAt: 99999,
+      accountId: null,
+    });
+
+    await register();
+    await expect(handlers.get('codex-oauth:v1:login')?.()).rejects.toThrow(/无法读取.*账户/);
+    expect(closeMock).toHaveBeenCalledTimes(1);
+    expect(writeConfigMock).not.toHaveBeenCalled();
+
+    const { getCodexTokenStore } = await import('./codex-oauth-ipc');
+    const stored = await getCodexTokenStore().read();
+    expect(stored).toBeNull();
+    expect(fakeCachedConfig).toBeNull();
+  });
 });
 
 describe('codex-oauth:v1:logout', () => {

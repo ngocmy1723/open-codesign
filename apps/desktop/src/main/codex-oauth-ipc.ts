@@ -122,6 +122,13 @@ async function runLogin(): Promise<CodexOAuthStatus> {
     logger.info('codex.oauth.login.started', { redirectUri: server.redirectUri });
     const { code } = await server.waitForCode(state);
     const tokenSet: TokenSet = await exchangeCode(code, pkce.verifier, server.redirectUri);
+    if (tokenSet.accountId === null) {
+      throw new CodesignError(
+        'Codex 登录成功但无法读取 ChatGPT 账户 ID，请重试登录。',
+        ERROR_CODES.PROVIDER_ERROR,
+        { cause: null },
+      );
+    }
     const email = extractEmail(tokenSet.idToken);
     const stored: StoredCodexAuth = {
       schemaVersion: 1,
