@@ -1,5 +1,5 @@
 import { CodesignError } from '@open-codesign/shared';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock electron and logger before importing the module under test.
 vi.mock('electron', () => ({
@@ -31,8 +31,8 @@ vi.mock('node:fs/promises', () => ({
   mkdir: vi.fn(async () => {}),
 }));
 
-import { readPersisted, registerPreferencesIpc } from './preferences-ipc';
 import { writeFile } from 'node:fs/promises';
+import { readPersisted, registerPreferencesIpc } from './preferences-ipc';
 
 describe('readPersisted()', () => {
   it('returns defaults when the file does not exist (ENOENT)', async () => {
@@ -40,7 +40,12 @@ describe('readPersisted()', () => {
     readFileMock.mockRejectedValueOnce(notFound);
 
     const result = await readPersisted();
-    expect(result).toEqual({ updateChannel: 'stable', generationTimeoutSec: 1200, checkForUpdatesOnStartup: true, dismissedUpdateVersion: '' });
+    expect(result).toEqual({
+      updateChannel: 'stable',
+      generationTimeoutSec: 1200,
+      checkForUpdatesOnStartup: true,
+      dismissedUpdateVersion: '',
+    });
   });
 
   it('honors XDG_CONFIG_HOME when computing the persisted file path', async () => {
@@ -130,9 +135,17 @@ describe('preferences v4 schema fields', () => {
   it('round-trips dismissedUpdateVersion through preferences:v1:update', async () => {
     // First read (in the update handler) returns the current stored preferences.
     readFileMock.mockResolvedValueOnce(
-      JSON.stringify({ schemaVersion: 4, updateChannel: 'stable', generationTimeoutSec: 1200, checkForUpdatesOnStartup: true, dismissedUpdateVersion: '' }),
+      JSON.stringify({
+        schemaVersion: 4,
+        updateChannel: 'stable',
+        generationTimeoutSec: 1200,
+        checkForUpdatesOnStartup: true,
+        dismissedUpdateVersion: '',
+      }),
     );
-    const updated = await (handlers['preferences:v1:update'] as (_e: null, raw: unknown) => Promise<unknown>)(null, { dismissedUpdateVersion: '0.2.1' });
+    const updated = await (
+      handlers['preferences:v1:update'] as (_e: null, raw: unknown) => Promise<unknown>
+    )(null, { dismissedUpdateVersion: '0.2.1' });
     expect((updated as { dismissedUpdateVersion: string }).dismissedUpdateVersion).toBe('0.2.1');
 
     // Verify writeFile was called with the updated value.

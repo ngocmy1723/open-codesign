@@ -136,10 +136,7 @@ function parsePreferences(raw: unknown): Partial<Preferences> {
   }
   if (r['dismissedUpdateVersion'] !== undefined) {
     if (typeof r['dismissedUpdateVersion'] !== 'string') {
-      throw new CodesignError(
-        'dismissedUpdateVersion must be a string',
-        ERROR_CODES.IPC_BAD_INPUT,
-      );
+      throw new CodesignError('dismissedUpdateVersion must be a string', ERROR_CODES.IPC_BAD_INPUT);
     }
     out.dismissedUpdateVersion = r['dismissedUpdateVersion'];
   }
