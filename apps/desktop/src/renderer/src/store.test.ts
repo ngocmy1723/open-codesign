@@ -893,6 +893,40 @@ describe('useCodesignStore report dialog slice', () => {
     expect(found?.message).toBe('could not read opencode config');
     expect(found?.fingerprint).toMatch(/^[0-9a-f]{8}$/);
   });
+
+  it('patches persistedEventId + persistedFingerprint after recordRendererError resolves', async () => {
+    const recordRendererError = vi
+      .fn()
+      .mockResolvedValue({ schemaVersion: 1, eventId: 123, fingerprint: 'main-side-fp' });
+    vi.stubGlobal('window', { codesign: { diagnostics: { recordRendererError } } });
+    useCodesignStore.setState({ reportableErrors: [] });
+    const id = useCodesignStore.getState().createReportableError({
+      code: 'X',
+      scope: 'y',
+      message: 'boom',
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    const record = useCodesignStore.getState().getReportableError(id);
+    expect(record?.persistedEventId).toBe(123);
+    expect(record?.persistedFingerprint).toBe('main-side-fp');
+  });
+
+  it('omits persistedFingerprint when main does not echo one back', async () => {
+    const recordRendererError = vi.fn().mockResolvedValue({ schemaVersion: 1, eventId: 7 });
+    vi.stubGlobal('window', { codesign: { diagnostics: { recordRendererError } } });
+    useCodesignStore.setState({ reportableErrors: [] });
+    const id = useCodesignStore.getState().createReportableError({
+      code: 'X',
+      scope: 'y',
+      message: 'boom',
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    const record = useCodesignStore.getState().getReportableError(id);
+    expect(record?.persistedEventId).toBe(7);
+    expect(record?.persistedFingerprint).toBeUndefined();
+  });
 });
 
 describe('extractCodesignErrorCode', () => {

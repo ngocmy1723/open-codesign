@@ -86,6 +86,22 @@ export interface Toast {
   };
 }
 
+/**
+ * Input to `reportableErrorToast`. Mirrors `Toast` minus the auto-filled
+ * fields (id, variant, localId) plus the ReportableError triage fields
+ * the store uses to build a richer record than pushToast's auto-wrap.
+ */
+export interface ReportableErrorToastSpec {
+  title: string;
+  description?: string;
+  action?: Toast['action'];
+  code: string;
+  scope: string;
+  stack?: string;
+  runId?: string;
+  context?: Record<string, unknown>;
+}
+
 export type Theme = 'light' | 'dark';
 export type AppView = 'hub' | 'workspace' | 'settings';
 export type SettingsTab = 'models' | 'appearance' | 'storage' | 'diagnostics' | 'advanced';
@@ -334,6 +350,15 @@ interface CodesignState {
   requestRenameDesign: (design: Design | null) => void;
 
   pushToast: (toast: Omit<Toast, 'id'>) => string;
+  /**
+   * Convenience wrapper that pairs `createReportableError` with `pushToast`
+   * so callers don't have to stitch them together. Prefer this over raw
+   * `pushToast({ variant: 'error', ... })` at any site where a meaningful
+   * `code` + `scope` can be supplied — the Report dialog then gets real
+   * triage fields instead of the generic RENDERER_ERROR / renderer pair
+   * that `pushToast`'s auto-wrap falls back to.
+   */
+  reportableErrorToast: (spec: ReportableErrorToastSpec) => string;
   dismissToast: (id?: string) => void;
 
   // Sidebar v2 chat actions
@@ -2048,6 +2073,24 @@ export const useCodesignStore = create<CodesignState>((set, get) => ({
     set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) }));
   },
 
+  reportableErrorToast(spec) {
+    const localId = get().createReportableError({
+      code: spec.code,
+      scope: spec.scope,
+      message: spec.description ?? spec.title,
+      ...(spec.stack !== undefined ? { stack: spec.stack } : {}),
+      ...(spec.runId !== undefined ? { runId: spec.runId } : {}),
+      ...(spec.context !== undefined ? { context: spec.context } : {}),
+    });
+    return get().pushToast({
+      variant: 'error',
+      title: spec.title,
+      ...(spec.description !== undefined ? { description: spec.description } : {}),
+      ...(spec.action !== undefined ? { action: spec.action } : {}),
+      localId,
+    });
+  },
+
   async loadChatForCurrentDesign() {
     if (!window.codesign) return;
     const designId = get().currentDesignId;
@@ -2551,9 +2594,21 @@ export const useCodesignStore = create<CodesignState>((set, get) => ({
         .then((res) => {
           if (res.eventId === null) return;
           const eventId = res.eventId;
+          // Batch A echoes `fingerprint` alongside eventId so the renderer
+          // stops trusting its own FNV estimate once the DB row has been
+          // written. Guarded on type for the transition window while Batch A's
+          // type extension is landing.
+          const echoed = (res as { fingerprint?: unknown }).fingerprint;
+          const persistedFingerprint = typeof echoed === 'string' ? echoed : undefined;
           set((s) => ({
             reportableErrors: s.reportableErrors.map((existing) =>
-              existing.localId === localId ? { ...existing, persistedEventId: eventId } : existing,
+              existing.localId === localId
+                ? {
+                    ...existing,
+                    persistedEventId: eventId,
+                    ...(persistedFingerprint !== undefined ? { persistedFingerprint } : {}),
+                  }
+                : existing,
             ),
           }));
         })

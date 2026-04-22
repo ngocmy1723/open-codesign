@@ -284,6 +284,7 @@ function ProviderCard({
 }) {
   const t = useT();
   const pushToast = useCodesignStore((s) => s.pushToast);
+  const reportableErrorToast = useCodesignStore((s) => s.reportableErrorToast);
   const label = row.label ?? row.provider;
   const hasError = row.error !== undefined;
 
@@ -295,8 +296,9 @@ function ProviderCard({
 
   async function handleTestConnection() {
     if (!window.codesign) {
-      pushToast({
-        variant: 'error',
+      reportableErrorToast({
+        code: 'CONNECTION_TEST_FAILED',
+        scope: 'settings',
         title: t('settings.providers.toast.connectionFailed'),
         description: t('settings.common.unknownError'),
       });
@@ -308,17 +310,22 @@ function ProviderCard({
       if (res.ok) {
         pushToast({ variant: 'success', title: t('settings.providers.toast.connectionOk') });
       } else {
-        pushToast({
-          variant: 'error',
+        reportableErrorToast({
+          code: 'CONNECTION_TEST_FAILED',
+          scope: 'settings',
           title: t('settings.providers.toast.connectionFailed'),
           description: res.hint || res.message,
+          context: { provider: row.provider },
         });
       }
     } catch (err) {
-      pushToast({
-        variant: 'error',
+      reportableErrorToast({
+        code: 'CONNECTION_TEST_FAILED',
+        scope: 'settings',
         title: t('settings.providers.toast.connectionFailed'),
         description: err instanceof Error ? err.message : t('settings.common.unknownError'),
+        ...(err instanceof Error && err.stack !== undefined ? { stack: err.stack } : {}),
+        context: { provider: row.provider },
       });
     }
   }
@@ -400,7 +407,7 @@ function ActiveModelSelector({
 }) {
   const t = useT();
   const setConfig = useCodesignStore((s) => s.completeOnboarding);
-  const pushToast = useCodesignStore((s) => s.pushToast);
+  const reportableErrorToast = useCodesignStore((s) => s.reportableErrorToast);
 
   const [primary, setPrimary] = useState(config.modelPrimary ?? '');
   const [models, setModels] = useState<string[] | null>(null);
@@ -438,10 +445,13 @@ function ActiveModelSelector({
       setConfig(updated);
       return true;
     } catch (err) {
-      pushToast({
-        variant: 'error',
+      reportableErrorToast({
+        code: 'PROVIDER_MODEL_SAVE_FAILED',
+        scope: 'settings',
         title: t('settings.providers.toast.modelSaveFailed'),
         description: err instanceof Error ? err.message : t('settings.common.unknownError'),
+        ...(err instanceof Error && err.stack !== undefined ? { stack: err.stack } : {}),
+        context: { provider },
       });
       return false;
     }
@@ -490,6 +500,7 @@ function ReasoningDepthSelector({
 }) {
   const t = useT();
   const pushToast = useCodesignStore((s) => s.pushToast);
+  const reportableErrorToast = useCodesignStore((s) => s.reportableErrorToast);
   const [saving, setSaving] = useState(false);
   // Controlled local state — optimistic so the dropdown reflects the user's
   // choice immediately, before the IPC round-trip resolves. Without this,
@@ -522,10 +533,13 @@ function ReasoningDepthSelector({
       // Roll back the optimistic update only if this is still the latest
       // in-flight save — otherwise a newer pick is about to land.
       if (seq === saveSeq.current) setCurrent(prev);
-      pushToast({
-        variant: 'error',
+      reportableErrorToast({
+        code: 'PROVIDER_REASONING_SAVE_FAILED',
+        scope: 'settings',
         title: t('settings.providers.toast.reasoningSaveFailed'),
         description: err instanceof Error ? err.message : t('settings.common.unknownError'),
+        ...(err instanceof Error && err.stack !== undefined ? { stack: err.stack } : {}),
+        context: { provider },
       });
     } finally {
       if (seq === saveSeq.current) setSaving(false);
@@ -884,6 +898,7 @@ function ModelsTab() {
   const config = useCodesignStore((s) => s.config);
   const setConfig = useCodesignStore((s) => s.completeOnboarding);
   const pushToast = useCodesignStore((s) => s.pushToast);
+  const reportableErrorToast = useCodesignStore((s) => s.reportableErrorToast);
   const [rows, setRows] = useState<ProviderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddCustom, setShowAddCustom] = useState(false);
@@ -1034,10 +1049,12 @@ function ModelsTab() {
       await reloadRows();
       pushToast({ variant: 'success', title: t('settings.providers.import.codexDone') });
     } catch (err) {
-      pushToast({
-        variant: 'error',
+      reportableErrorToast({
+        code: 'CODEX_IMPORT_FAILED',
+        scope: 'onboarding',
         title: t('settings.providers.import.failed'),
         description: err instanceof Error ? err.message : t('settings.common.unknownError'),
+        ...(err instanceof Error && err.stack !== undefined ? { stack: err.stack } : {}),
       });
     }
   }
@@ -1061,10 +1078,12 @@ function ModelsTab() {
         ...(description !== undefined ? { description } : {}),
       });
     } catch (err) {
-      pushToast({
-        variant: 'error',
+      reportableErrorToast({
+        code: 'GEMINI_IMPORT_FAILED',
+        scope: 'onboarding',
         title: t('settings.providers.import.failed'),
         description: err instanceof Error ? err.message : t('settings.common.unknownError'),
+        ...(err instanceof Error && err.stack !== undefined ? { stack: err.stack } : {}),
       });
     }
   }
@@ -1090,10 +1109,12 @@ function ModelsTab() {
         ...(description !== undefined ? { description } : {}),
       });
     } catch (err) {
-      pushToast({
-        variant: 'error',
+      reportableErrorToast({
+        code: 'OPENCODE_IMPORT_FAILED',
+        scope: 'onboarding',
         title: t('settings.providers.import.failed'),
         description: err instanceof Error ? err.message : t('settings.common.unknownError'),
+        ...(err instanceof Error && err.stack !== undefined ? { stack: err.stack } : {}),
       });
     }
   }
@@ -1131,10 +1152,12 @@ function ModelsTab() {
         });
         return;
       }
-      pushToast({
-        variant: 'error',
+      reportableErrorToast({
+        code: 'CLAUDECODE_IMPORT_FAILED',
+        scope: 'onboarding',
         title: t('settings.providers.import.failed'),
         description: err instanceof Error ? err.message : t('settings.common.unknownError'),
+        ...(err instanceof Error && err.stack !== undefined ? { stack: err.stack } : {}),
       });
     }
   }
@@ -1199,10 +1222,12 @@ function ModelsTab() {
         }
       }
     } catch (err) {
-      pushToast({
-        variant: 'error',
+      reportableErrorToast({
+        code: 'PROVIDER_DELETE_FAILED',
+        scope: 'settings',
         title: t('settings.providers.toast.deleteFailed'),
         description: err instanceof Error ? err.message : t('settings.common.unknownError'),
+        ...(err instanceof Error && err.stack !== undefined ? { stack: err.stack } : {}),
       });
     }
   }
@@ -1239,10 +1264,12 @@ function ModelsTab() {
         title: t('settings.providers.toast.switchedTo', { label }),
       });
     } catch (err) {
-      pushToast({
-        variant: 'error',
+      reportableErrorToast({
+        code: 'PROVIDER_ACTIVATE_FAILED',
+        scope: 'settings',
         title: t('settings.providers.toast.switchFailed'),
         description: err instanceof Error ? err.message : t('settings.common.unknownError'),
+        ...(err instanceof Error && err.stack !== undefined ? { stack: err.stack } : {}),
       });
     }
   }

@@ -34,7 +34,7 @@ export function ModelSwitcher({ variant }: ModelSwitcherProps) {
   const t = useT();
   const config = useCodesignStore((s) => s.config);
   const setConfig = useCodesignStore((s) => s.completeOnboarding);
-  const pushToast = useCodesignStore((s) => s.pushToast);
+  const reportableErrorToast = useCodesignStore((s) => s.reportableErrorToast);
 
   const [open, setOpen] = useState(false);
   const [models, setModels] = useState<string[] | null>(null);
@@ -122,10 +122,13 @@ export function ModelSwitcher({ variant }: ModelSwitcherProps) {
       recordAction({ type: 'provider.switch', data: { provider, modelId: model } });
       setConfig(next);
     } catch (err) {
-      pushToast({
-        variant: 'error',
+      reportableErrorToast({
+        code: 'PROVIDER_MODEL_SAVE_FAILED',
+        scope: 'settings',
         title: t('settings.providers.toast.modelSaveFailed'),
         description: err instanceof Error ? err.message : t('settings.common.unknownError'),
+        ...(err instanceof Error && err.stack !== undefined ? { stack: err.stack } : {}),
+        context: { provider, model },
       });
     } finally {
       setOpen(false);
