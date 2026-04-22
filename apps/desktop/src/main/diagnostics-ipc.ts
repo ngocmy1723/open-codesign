@@ -143,8 +143,14 @@ function parseReportEventInput(raw: unknown): ReportEventInput {
   if (typeof r['notes'] !== 'string') {
     throw new CodesignError('notes must be a string', 'IPC_BAD_INPUT');
   }
+  if ((r['notes'] as string).length > 4000) {
+    throw new CodesignError('reportEvent notes exceed 4000 characters', 'IPC_BAD_INPUT');
+  }
   if (!Array.isArray(r['timeline'])) {
     throw new CodesignError('timeline must be an array', 'IPC_BAD_INPUT');
+  }
+  if ((r['timeline'] as unknown[]).length > 100) {
+    throw new CodesignError('reportEvent timeline exceeds 100 entries', 'IPC_BAD_INPUT');
   }
   return {
     schemaVersion: 1,

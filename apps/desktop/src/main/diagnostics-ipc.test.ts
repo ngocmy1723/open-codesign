@@ -247,6 +247,29 @@ describe('diagnostics:v1:reportEvent', () => {
     ).rejects.toThrow();
   });
 
+  it('rejects notes > 4000 chars (defense in depth — renderer cap is UX only)', async () => {
+    const db = initInMemoryDb();
+    registerDiagnosticsIpc(db);
+    await expect(
+      invoke(
+        'diagnostics:v1:reportEvent',
+        baseReportInput(1, { notes: 'x'.repeat(4001) }),
+      ),
+    ).rejects.toThrow(/4000 characters/);
+  });
+
+  it('rejects timeline with > 100 entries', async () => {
+    const db = initInMemoryDb();
+    registerDiagnosticsIpc(db);
+    const timeline = Array.from({ length: 101 }, (_, i) => ({
+      ts: i,
+      type: 'prompt.submit' as const,
+    }));
+    await expect(
+      invoke('diagnostics:v1:reportEvent', baseReportInput(1, { timeline })),
+    ).rejects.toThrow(/100 entries/);
+  });
+
   it('truncates body when summary exceeds 7 KB', async () => {
     const db = initInMemoryDb();
     recordDiagnosticEvent(db, {
