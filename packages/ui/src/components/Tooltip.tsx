@@ -24,7 +24,7 @@ export function Tooltip({ label, side = 'bottom', children }: TooltipProps) {
     isValidElement<{ disabled?: boolean }>(children) && Boolean(children.props.disabled);
   return (
     <span
-      className="group/tooltip relative inline-flex focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-[var(--radius-sm)]"
+      className="relative inline-flex group/tooltip focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-focus-ring)] rounded-[var(--radius-sm)]"
       tabIndex={childDisabled ? 0 : undefined}
       aria-describedby={tooltipId}
     >
