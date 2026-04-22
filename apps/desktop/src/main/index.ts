@@ -606,7 +606,7 @@ function registerIpcHandlers(db: Database | null): void {
             logger: coreLogger,
           });
           const result = {
-            message: codex.rawOutput,
+            message: codex.message,
             artifacts: codex.artifacts,
             inputTokens: 0,
             outputTokens: 0,
