@@ -111,9 +111,7 @@ describe('CodexClient', () => {
   });
 
   it('reuses session_id across calls', async () => {
-    const fetchFn = vi
-      .fn()
-      .mockImplementation(() => Promise.resolve(sseFromText(SAMPLE_TEXT)));
+    const fetchFn = vi.fn().mockImplementation(() => Promise.resolve(sseFromText(SAMPLE_TEXT)));
     const { store } = makeStore();
     const client = new CodexClient({
       store,
@@ -240,13 +238,15 @@ describe('CodexClient', () => {
   });
 
   it('returns empty text on unexpected response shapes without throwing', async () => {
-    const fetchFn = vi.fn().mockResolvedValue(
-      sseStreamResponse([
-        `data: ${JSON.stringify({ type: 'response.other' })}\n\n`,
-        `data: ${JSON.stringify({ type: 'response.completed' })}\n\n`,
-        'data: [DONE]\n\n',
-      ]),
-    );
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValue(
+        sseStreamResponse([
+          `data: ${JSON.stringify({ type: 'response.other' })}\n\n`,
+          `data: ${JSON.stringify({ type: 'response.completed' })}\n\n`,
+          'data: [DONE]\n\n',
+        ]),
+      );
     const { store } = makeStore();
     const client = new CodexClient({
       store,
