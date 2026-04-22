@@ -312,9 +312,9 @@ describe('config:v1:import-codex-config empty env handling', () => {
 
   it('encrypts Codex auth.json API keys for providers requiring OpenAI auth', async () => {
     const { readCodexConfig } = await import('./imports/codex-config');
-    const { tryBuildSecretRef } = await import('./keychain');
+    const { buildSecretRef } = await import('./keychain');
     const { writeConfig } = await import('./config');
-    vi.mocked(tryBuildSecretRef).mockClear();
+    vi.mocked(buildSecretRef).mockClear();
     vi.mocked(writeConfig).mockClear();
     vi.mocked(readCodexConfig).mockResolvedValueOnce({
       providers: [
@@ -342,7 +342,7 @@ describe('config:v1:import-codex-config empty env handling', () => {
       hasKey: true,
     });
 
-    expect(tryBuildSecretRef).toHaveBeenCalledWith('sk-codex-auth');
+    expect(buildSecretRef).toHaveBeenCalledWith('sk-codex-auth');
     const written = vi.mocked(writeConfig).mock.calls.at(-1)?.[0];
     expect(written?.secrets['codex-custom']).toEqual(
       expect.objectContaining({ ciphertext: 'enc:sk-codex-auth' }),
@@ -610,10 +610,10 @@ describe('config:v1:detect-external-configs — never leaks plaintext keys', () 
     expect(handler).toBeDefined();
     const result = (await handler?.()) as Record<string, unknown>;
 
-    expect(result.codex).toBeDefined();
-    const codex = result.codex as Record<string, unknown>;
-    expect(codex.apiKeyMap).toBeUndefined();
-    expect(codex.envKeyMap).toBeUndefined();
+    expect(result['codex']).toBeDefined();
+    const codex = result['codex'] as Record<string, unknown>;
+    expect(codex['apiKeyMap']).toBeUndefined();
+    expect(codex['envKeyMap']).toBeUndefined();
     // Belt and suspenders: the full serialized payload should not contain
     // the secret string anywhere — catches future changes that stuff the
     // key under a different field name.
@@ -643,9 +643,9 @@ describe('config:v1:detect-external-configs — never leaks plaintext keys', () 
     const handler = handlers.get('config:v1:detect-external-configs');
     const result = (await handler?.()) as Record<string, unknown>;
 
-    expect(result.opencode).toBeDefined();
-    const oc = result.opencode as Record<string, unknown>;
-    expect(oc.apiKeyMap).toBeUndefined();
+    expect(result['opencode']).toBeDefined();
+    const oc = result['opencode'] as Record<string, unknown>;
+    expect(oc['apiKeyMap']).toBeUndefined();
     expect(JSON.stringify(result)).not.toContain('sk-opencode-secret-leak-canary');
   });
 });

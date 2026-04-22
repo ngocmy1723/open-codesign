@@ -112,6 +112,10 @@ export interface ExternalConfigsDetection {
     activeProvider: string | null;
     activeModel: string | null;
     warnings: string[];
+    /** True when opencode config was found but produced no importable
+     *  providers (malformed JSON, all OAuth, all unsupported). UI renders
+     *  a warning-only banner mirroring the Gemini Vertex case. */
+    blocked: boolean;
   };
 }
 

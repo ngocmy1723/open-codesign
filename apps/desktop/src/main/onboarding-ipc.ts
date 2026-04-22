@@ -25,7 +25,7 @@ import { type ClaudeCodeImport, readClaudeCodeSettings } from './imports/claude-
 import { type CodexImport, codexAuthPath, readCodexConfig } from './imports/codex-config';
 import { type GeminiImport, readGeminiCliConfig } from './imports/gemini-cli-config';
 import { type OpencodeImport, readOpencodeConfig } from './imports/opencode-config';
-import { buildSecretRef, decryptSecret, migrateSecrets, tryBuildSecretRef } from './keychain';
+import { buildSecretRef, decryptSecret, migrateSecrets } from './keychain';
 import { defaultLogsDir, getLogger } from './logger';
 import {
   type ProviderRow,
@@ -787,6 +787,12 @@ interface OpencodeDetectionMeta {
   activeProvider: string | null;
   activeModel: string | null;
   warnings: string[];
+  /** True when we found opencode evidence (auth.json exists) but nothing is
+   *  importable — typically because the file is malformed JSON or every
+   *  entry was OAuth/wellknown/unknown. The UI renders a warning-only
+   *  banner so the user knows we saw their setup and why it was rejected,
+   *  instead of silently offering no button. Mirrors GeminiDetectionMeta. */
+  blocked: boolean;
 }
 
 interface ExternalConfigsDetection {
@@ -854,8 +860,11 @@ async function runImportCodex(imported: CodexImport): Promise<OnboardingState> {
     if (entry.envKey !== undefined) {
       const envValue = process.env[entry.envKey]?.trim();
       if (envValue !== undefined && envValue.length > 0) {
-        const ref = tryBuildSecretRef(envValue);
-        if (ref !== null) nextSecrets[entry.id] = ref;
+        // buildSecretRef throws only on empty input — length is already
+        // guarded. Bare call instead of `tryBuildSecretRef` so any future
+        // invariant break fails loudly rather than quietly writing a row
+        // with no key and reporting success.
+        nextSecrets[entry.id] = buildSecretRef(envValue);
         continue;
       }
     }
@@ -866,8 +875,7 @@ async function runImportCodex(imported: CodexImport): Promise<OnboardingState> {
           ? process.env['OPENAI_API_KEY']?.trim()
           : undefined;
     if (fallbackApiKey !== undefined && fallbackApiKey.length > 0) {
-      const ref = tryBuildSecretRef(fallbackApiKey);
-      if (ref !== null) nextSecrets[entry.id] = ref;
+      nextSecrets[entry.id] = buildSecretRef(fallbackApiKey);
     }
   }
   const fallbackActive = imported.providers[0];
@@ -921,8 +929,7 @@ async function runImportClaudeCode(imported: ClaudeCodeImport): Promise<Onboardi
   const importedApiKey = imported.apiKey?.trim();
   const keySaved = importedApiKey !== undefined && importedApiKey.length > 0;
   if (keySaved) {
-    const ref = tryBuildSecretRef(importedApiKey);
-    if (ref !== null) nextSecrets[imported.provider.id] = ref;
+    nextSecrets[imported.provider.id] = buildSecretRef(importedApiKey);
   }
 
   // Flip active only when we have a key the new provider can actually use,
@@ -975,8 +982,7 @@ async function runImportGemini(imported: GeminiImport): Promise<OnboardingState>
   const importedApiKey = imported.apiKey?.trim();
   const keySaved = importedApiKey !== undefined && importedApiKey.length > 0;
   if (keySaved) {
-    const ref = tryBuildSecretRef(importedApiKey);
-    if (ref !== null) nextSecrets[imported.provider.id] = ref;
+    nextSecrets[imported.provider.id] = buildSecretRef(importedApiKey);
   }
 
   const shouldActivate = keySaved || cachedConfig === null;
@@ -1021,8 +1027,7 @@ async function runImportOpencode(imported: OpencodeImport): Promise<OnboardingSt
     nextProviders[entry.id] = entry;
     const importedApiKey = imported.apiKeyMap[entry.id]?.trim();
     if (importedApiKey !== undefined && importedApiKey.length > 0) {
-      const ref = tryBuildSecretRef(importedApiKey);
-      if (ref !== null) nextSecrets[entry.id] = ref;
+      nextSecrets[entry.id] = buildSecretRef(importedApiKey);
     }
   }
   const fallbackActive = imported.providers[0];
@@ -1235,14 +1240,22 @@ export function registerOnboardingIpc(): void {
           };
         }
       }
-      if (opencode !== null && opencode.providers.length > 0 && !alreadyHasOpencode) {
-        // Same key-stripping projection as Codex above.
-        out.opencode = {
-          providers: opencode.providers,
-          activeProvider: opencode.activeProvider,
-          activeModel: opencode.activeModel,
-          warnings: opencode.warnings,
-        };
+      if (opencode !== null && !alreadyHasOpencode) {
+        // Surface whenever we found opencode evidence — either (a) there's
+        // at least one importable provider (happy path), or (b) auth.json
+        // exists but produced no usable entries (corrupt JSON, all OAuth,
+        // all unsupported). Case (b) gets a warning-only banner so the
+        // user at least sees we detected their setup.
+        const blocked = opencode.providers.length === 0;
+        if (!blocked || opencode.warnings.length > 0) {
+          out.opencode = {
+            providers: opencode.providers,
+            activeProvider: opencode.activeProvider,
+            activeModel: opencode.activeModel,
+            warnings: opencode.warnings,
+            blocked,
+          };
+        }
       }
       return out;
     },
