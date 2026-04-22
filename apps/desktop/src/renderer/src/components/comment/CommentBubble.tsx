@@ -89,7 +89,6 @@ export function CommentBubble({
   return createPortal(
     <div
       ref={rootRef}
-      // biome-ignore lint/a11y/useSemanticElements: floating popover should not steal Tab order like native <dialog>.
       role="dialog"
       aria-labelledby={titleId}
       aria-modal="false"

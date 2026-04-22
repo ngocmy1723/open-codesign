@@ -48,7 +48,6 @@ export function DesignsView() {
 
   return (
     <div
-      // biome-ignore lint/a11y/useSemanticElements: native <dialog> top-layer rendering interferes with our overlay stack
       role="dialog"
       aria-modal="true"
       aria-label={t('projects.view.title')}

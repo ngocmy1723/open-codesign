@@ -401,6 +401,7 @@ function ChatUI() {
   const bottomRef = React.useRef(null);
   React.useEffect(() => {
     if (bottomRef.current) bottomRef.current.parentNode.scrollTop = bottomRef.current.offsetTop;
+    // biome-ignore lint/correctness/useExhaustiveDependencies: demo file — effect intentionally re-runs on new messages to scroll into view
   }, [messages]);
 
   const send = () => {

@@ -56,6 +56,7 @@ export function ChatMessageList({
   useEffect(() => {
     if (!stickToBottomRef.current) return;
     bottomRef.current?.scrollIntoView({ block: 'end' });
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally re-scrolls on new messages or streaming text
   }, [messages.length, streamingText]);
 
   if (loading && messages.length === 0 && !streamingText) {

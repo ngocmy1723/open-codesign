@@ -100,7 +100,6 @@ export function extractSlides(html: string): SlideContent[] {
   return sections.map(parseSlide);
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: HTML-to-slide extraction is a small state machine; splitting hides the priority order (heading → li → p → fallback)
 function parseSlide(fragment: string): SlideContent {
   const headingMatch = HEADING_RE.exec(fragment);
   const title = headingMatch ? stripHtml(headingMatch[1] ?? '') : '';

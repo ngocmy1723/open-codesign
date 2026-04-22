@@ -113,7 +113,6 @@ export function AddCustomProviderModal({
 
   return (
     <div
-      // biome-ignore lint/a11y/useSemanticElements: same rationale as AddProviderModal — native <dialog> top-layer conflicts with our overlay stack
       role="dialog"
       aria-modal="true"
       aria-label={t('settings.providers.custom.title')}

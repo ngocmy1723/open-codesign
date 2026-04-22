@@ -74,7 +74,6 @@ export function createArtifactParser() {
     return out;
   }
 
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: stream parsers are inherently branchy; refactoring would reduce clarity
   function* feed(delta: string): Generator<ArtifactEvent> {
     state.buffer += delta;
 
