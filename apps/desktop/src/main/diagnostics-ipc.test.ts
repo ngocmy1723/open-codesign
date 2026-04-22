@@ -429,6 +429,38 @@ describe('diagnostics:v1:reportEvent', () => {
     ).rejects.toThrow(/error\.context serialized length exceeds 4000/);
   });
 
+  it('recordReported ignores renderer-supplied fingerprint and recomputes', async () => {
+    const db = initInMemoryDb();
+    registerDiagnosticsIpc(db);
+
+    await invoke(
+      'diagnostics:v1:reportEvent',
+      baseReportInput({
+        error: baseError({
+          localId: 'local-fp',
+          code: 'FP_CODE',
+          // Renderer claims these fingerprints (lie / stale / bug):
+          fingerprint: 'ffffffff',
+          persistedFingerprint: 'eeeeeeee',
+          message: 'fp check',
+          stack: 'Error: fp\n    at foo (a.ts:1:1)',
+        }),
+      }),
+    );
+
+    const recomputed = (await import('@open-codesign/shared/fingerprint')).computeFingerprint({
+      errorCode: 'FP_CODE',
+      stack: 'Error: fp\n    at foo (a.ts:1:1)',
+      message: 'fp check',
+    });
+    const { readReported } = await import('./reported-fingerprints');
+    const store = readReported('/tmp/reported-fingerprints.json');
+    const fps = store.entries.map((e) => e.fingerprint);
+    expect(fps).toContain(recomputed);
+    expect(fps).not.toContain('ffffffff');
+    expect(fps).not.toContain('eeeeeeee');
+  });
+
   it('trims logs when total URL would exceed 7KB', () => {
     // Drive the helper directly so we can force an oversized tail without
     // fighting the 50-line cap in readLogTail.

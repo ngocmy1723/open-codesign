@@ -921,7 +921,14 @@ export function registerDiagnosticsIpc(db: Database | null): void {
       });
 
       try {
-        const fp = error.persistedFingerprint ?? error.fingerprint;
+        // SECURITY: never trust the renderer-supplied fingerprint for dedup.
+        // Recompute main-side from errorCode + stack + message so a compromised
+        // renderer can't spoof or bypass the "recently reported" record.
+        const fp = computeFingerprint({
+          errorCode: error.code,
+          stack: error.stack,
+          message: error.message,
+        });
         recordReported(reportedFingerprintsPath(), fp, issueUrl);
       } catch (err) {
         logger.warn('diagnostics.reported.dedupWrite.fail', {
