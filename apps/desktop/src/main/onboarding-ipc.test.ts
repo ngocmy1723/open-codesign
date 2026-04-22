@@ -64,15 +64,7 @@ vi.mock('./keychain', () => ({
     ciphertext: `enc:${s}`,
     mask: s.length > 8 ? `${s.slice(0, 4)}***${s.slice(-4)}` : '***',
   })),
-  tryBuildSecretRef: vi.fn((s: string) => ({
-    ciphertext: `enc:${s}`,
-    mask: s.length > 8 ? `${s.slice(0, 4)}***${s.slice(-4)}` : '***',
-  })),
   migrateSecrets: vi.fn((cfg: { secrets?: Record<string, unknown> }) => ({
-    config: cfg,
-    changed: false,
-  })),
-  migrateSecretMasks: vi.fn((cfg: { secrets?: Record<string, unknown> }) => ({
     config: cfg,
     changed: false,
   })),

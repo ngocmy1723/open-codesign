@@ -71,8 +71,9 @@ const FALLBACK_IMPORTED_MODEL = 'gpt-4o';
 
 /**
  * Parse a Codex `config.toml` string and translate each `[model_providers.X]`
- * block into a v3 `ProviderEntry`. Unknown keys are silently ignored (parse
- * leniently — §8 risk mitigation).
+ * block into a v3 `ProviderEntry`. Unknown keys are silently ignored so a
+ * future Codex schema bump doesn't break import — the importer degrades to
+ * "what we recognise" rather than refusing the whole file.
  */
 export async function parseCodexConfig(toml: string): Promise<CodexImport> {
   const warnings: string[] = [];

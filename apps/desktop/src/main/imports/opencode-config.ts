@@ -6,7 +6,7 @@ import { safeReadImportFile } from './safe-read';
 /**
  * One-click import for the OpenCode CLI (`github.com/sst/opencode`).
  *
- * Schema was verified against the upstream source (April 2026):
+ * Schema was verified against upstream `sst/opencode`:
  *   - `packages/opencode/src/auth/index.ts` defines an Effect.Schema discriminated
  *     union written to `<Global.Path.data>/auth.json`: each top-level key is a
  *     provider ID (e.g. "anthropic", "openai", "google", "openrouter") and the

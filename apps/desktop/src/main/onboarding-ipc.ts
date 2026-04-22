@@ -839,7 +839,7 @@ async function runImportCodex(imported: CodexImport): Promise<OnboardingState> {
       const envValue = process.env[entry.envKey]?.trim();
       if (envValue !== undefined && envValue.length > 0) {
         // buildSecretRef throws only on empty input — length is already
-        // guarded. Bare call instead of `tryBuildSecretRef` so any future
+        // guarded. Bare call instead of wrapping in try/catch so any future
         // invariant break fails loudly rather than quietly writing a row
         // with no key and reporting success.
         nextSecrets[entry.id] = buildSecretRef(envValue);
