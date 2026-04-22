@@ -57,6 +57,19 @@ nsis:
   allowToChangeInstallationDirectory: true
 linux:
   icon: resources/icon.png
+  # `maintainer`, `vendor`, `synopsis`, and `description` are REQUIRED metadata
+  # for deb/rpm. electron-builder falls back to `author@noreply.github.com` and
+  # "Unknown" when they're missing, which causes lintian warnings and gets the
+  # package rejected by strict apt mirrors. Values kept in sync with
+  # opencowork.ai's other published contacts (security@, conduct@).
+  maintainer: Open CoDesign Maintainers <maintainers@opencowork.ai>
+  vendor: OpenCoworkAI
+  synopsis: Prompt-to-design desktop app for HTML prototypes, decks, and marketing assets.
+  description: |
+    Open CoDesign turns natural-language prompts into interactive HTML
+    prototypes, PDF-ready slide decks, and marketing assets. Multi-provider
+    model support (Anthropic, OpenAI, Google Gemini, DeepSeek, local Ollama,
+    any OpenAI-compatible endpoint), BYOK, local-first storage, no telemetry.
   # Hardcode `x64` (not ${arch}) because electron-builder substitutes ${arch}
   # differently per Linux target convention (AppImage → x86_64, deb → amd64,
   # rpm → x86_64). SmartDownload.vue + Homebrew cask + Flatpak manifest all
