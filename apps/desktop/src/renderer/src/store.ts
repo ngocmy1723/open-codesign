@@ -63,6 +63,11 @@ export interface Toast {
    */
   runId?: string;
   /**
+   * Optional error code used when the store auto-records this toast as a
+   * diagnostic event (error toasts only). Defaults to 'RENDERER_ERROR'.
+   */
+  code?: string;
+  /**
    * Optional secondary action rendered as a button inside the toast. Used
    * to turn diagnostic toasts into actionable ones — e.g. a "no API key"
    * generate error becomes a toast with "Open Settings" that jumps the
@@ -1930,6 +1935,43 @@ export const useCodesignStore = create<CodesignState>((set, get) => ({
       }
       return { toasts: [...toasts, next] };
     });
+    // Auto-record error toasts that don't already carry an eventId so the
+    // Report button always has a matching diagnostic row to open. Without
+    // this, toasts from non-generation paths (onboarding imports, settings
+    // failures, etc.) would make Report resolve to null and do nothing.
+    if (
+      toast.variant === 'error' &&
+      toast.eventId === undefined &&
+      typeof window !== 'undefined' &&
+      window.codesign?.diagnostics?.recordRendererError
+    ) {
+      const payload: {
+        schemaVersion: 1;
+        code: string;
+        scope: string;
+        message: string;
+        runId?: string;
+      } = {
+        schemaVersion: 1,
+        code: toast.code ?? 'RENDERER_ERROR',
+        scope: 'renderer',
+        message: toast.description ?? toast.title,
+      };
+      if (toast.runId !== undefined) payload.runId = toast.runId;
+      void window.codesign.diagnostics
+        .recordRendererError(payload)
+        .then((res) => {
+          if (res.eventId === null) return;
+          set((s) => ({
+            toasts: s.toasts.map((existing) =>
+              existing.id === id ? { ...existing, eventId: res.eventId ?? undefined } : existing,
+            ),
+          }));
+        })
+        .catch(() => {
+          // Swallow — Report button will fall back to the "no event" path.
+        });
+    }
     return id;
   },
 
