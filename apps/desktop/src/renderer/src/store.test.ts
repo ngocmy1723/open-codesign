@@ -780,7 +780,7 @@ describe('useCodesignStore pushToast -> recordRendererError', () => {
     await initI18n('en');
   });
 
-  it('records the error toast via IPC with code + message + runId', async () => {
+  it('pushToast for an error auto-creates a ReportableError and fires recordRendererError', async () => {
     const recordRendererError = vi.fn().mockResolvedValue({ eventId: 42 });
     vi.stubGlobal('window', {
       codesign: {
@@ -788,12 +788,11 @@ describe('useCodesignStore pushToast -> recordRendererError', () => {
       },
     });
 
+    useCodesignStore.setState({ reportableErrors: [] });
     useCodesignStore.getState().pushToast({
       variant: 'error',
       title: 'Boom',
       description: 'Something broke',
-      code: 'PROVIDER_ERROR',
-      runId: 'run-xyz',
     });
 
     // Allow the fire-and-forget promise to flush.
@@ -801,16 +800,17 @@ describe('useCodesignStore pushToast -> recordRendererError', () => {
     await Promise.resolve();
 
     expect(recordRendererError).toHaveBeenCalledTimes(1);
-    expect(recordRendererError).toHaveBeenCalledWith({
+    const payload = recordRendererError.mock.calls[0]?.[0];
+    expect(payload).toMatchObject({
       schemaVersion: 1,
-      code: 'PROVIDER_ERROR',
+      code: 'RENDERER_ERROR',
       scope: 'renderer',
       message: 'Something broke',
-      runId: 'run-xyz',
     });
+    expect(useCodesignStore.getState().reportableErrors).toHaveLength(1);
   });
 
-  it('defaults code to RENDERER_ERROR and uses title when description is absent', async () => {
+  it('uses toast.title as the message when description is absent', async () => {
     const recordRendererError = vi.fn().mockResolvedValue({ eventId: null });
     vi.stubGlobal('window', {
       codesign: {
@@ -818,6 +818,7 @@ describe('useCodesignStore pushToast -> recordRendererError', () => {
       },
     });
 
+    useCodesignStore.setState({ reportableErrors: [] });
     useCodesignStore.getState().pushToast({
       variant: 'error',
       title: 'Plain failure',
@@ -826,12 +827,14 @@ describe('useCodesignStore pushToast -> recordRendererError', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    expect(recordRendererError).toHaveBeenCalledWith({
-      schemaVersion: 1,
-      code: 'RENDERER_ERROR',
-      scope: 'renderer',
-      message: 'Plain failure',
-    });
+    expect(recordRendererError).toHaveBeenCalledWith(
+      expect.objectContaining({
+        schemaVersion: 1,
+        code: 'RENDERER_ERROR',
+        scope: 'renderer',
+        message: 'Plain failure',
+      }),
+    );
   });
 
   it('does not call recordRendererError for non-error toasts', async () => {
@@ -849,11 +852,40 @@ describe('useCodesignStore pushToast -> recordRendererError', () => {
 });
 
 describe('useCodesignStore report dialog slice', () => {
-  it('openReportDialog sets activeReportEventId and closeReportDialog clears it', () => {
-    useCodesignStore.setState({ activeReportEventId: null });
-    useCodesignStore.getState().openReportDialog(7);
-    expect(useCodesignStore.getState().activeReportEventId).toBe(7);
+  it('openReportDialog sets activeReportLocalId and closeReportDialog clears it', () => {
+    useCodesignStore.setState({ activeReportLocalId: null });
+    useCodesignStore.getState().openReportDialog('local-7');
+    expect(useCodesignStore.getState().activeReportLocalId).toBe('local-7');
     useCodesignStore.getState().closeReportDialog();
-    expect(useCodesignStore.getState().activeReportEventId).toBeNull();
+    expect(useCodesignStore.getState().activeReportLocalId).toBeNull();
+  });
+
+  it('createReportableError caps the ring at MAX_REPORTABLE (100)', () => {
+    vi.stubGlobal('window', { codesign: undefined });
+    useCodesignStore.setState({ reportableErrors: [] });
+    const state = useCodesignStore.getState();
+    for (let i = 0; i < 105; i += 1) {
+      state.createReportableError({
+        code: 'X',
+        scope: 'test',
+        message: `msg-${i}`,
+      });
+    }
+    expect(useCodesignStore.getState().reportableErrors).toHaveLength(100);
+    expect(useCodesignStore.getState().reportableErrors[0]?.message).toBe('msg-5');
+  });
+
+  it('getReportableError returns the record by localId', () => {
+    vi.stubGlobal('window', { codesign: undefined });
+    useCodesignStore.setState({ reportableErrors: [] });
+    const id = useCodesignStore.getState().createReportableError({
+      code: 'IMPORT_FAILED',
+      scope: 'onboarding',
+      message: 'could not read opencode config',
+    });
+    const found = useCodesignStore.getState().getReportableError(id);
+    expect(found?.code).toBe('IMPORT_FAILED');
+    expect(found?.message).toBe('could not read opencode config');
+    expect(found?.fingerprint).toMatch(/^[0-9a-f]{8}$/);
   });
 });
