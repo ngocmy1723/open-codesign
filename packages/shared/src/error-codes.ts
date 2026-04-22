@@ -25,6 +25,7 @@ export const ERROR_CODES = {
   PROVIDER_BASE_URL_MISSING: 'PROVIDER_BASE_URL_MISSING',
   PROVIDER_ERROR: 'PROVIDER_ERROR',
   PROVIDER_HTTP_4XX: 'PROVIDER_HTTP_4XX',
+  PROVIDER_UPSTREAM_ERROR: 'PROVIDER_UPSTREAM_ERROR',
   PROVIDER_ABORTED: 'PROVIDER_ABORTED',
   PROVIDER_RETRY_EXHAUSTED: 'PROVIDER_RETRY_EXHAUSTED',
   CLAUDE_CODE_OAUTH_ONLY: 'CLAUDE_CODE_OAUTH_ONLY',
@@ -137,6 +138,10 @@ export const ERROR_CODE_DESCRIPTIONS: Record<CodesignErrorCode, ErrorCodeDescrip
   },
   PROVIDER_HTTP_4XX: {
     userFacing: 'The provider rejected the request. Verify your API key and billing.',
+    category: 'provider',
+  },
+  PROVIDER_UPSTREAM_ERROR: {
+    userFacing: 'The provider returned an unexpected error. Details are in the log.',
     category: 'provider',
   },
   PROVIDER_ABORTED: {
