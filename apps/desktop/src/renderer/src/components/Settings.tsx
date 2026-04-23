@@ -1550,16 +1550,6 @@ function ModelsTab() {
               setShowAddMenu(false);
               setShowAddCustom(true);
             }}
-            onAddCliProxyApi={() => {
-              setShowAddMenu(false);
-              setCustomProviderPreset({
-                name: 'CLIProxyAPI',
-                baseUrl: 'http://127.0.0.1:8317',
-                wire: 'anthropic',
-                defaultModel: '',
-              });
-              setShowAddCustom(true);
-            }}
           />
         </div>
 
@@ -2169,7 +2159,6 @@ interface AddProviderMenuProps {
   onImportClaudeCode: () => void;
   onAddOllama: () => void;
   onAddCustom: () => void;
-  onAddCliProxyApi: () => void;
 }
 
 function AddProviderMenu({
@@ -2181,7 +2170,6 @@ function AddProviderMenu({
   onImportClaudeCode,
   onAddOllama,
   onAddCustom,
-  onAddCliProxyApi,
 }: AddProviderMenuProps) {
   const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -2244,15 +2232,6 @@ function AddProviderMenu({
       }),
       disabled: false,
       onClick: onAddCustom,
-    },
-    {
-      key: 'cli-proxy-api',
-      label: t('settings.providers.cliProxyApi.presetName', { defaultValue: 'CLIProxyAPI' }),
-      desc: t('settings.providers.cliProxyApi.presetDescription', {
-        defaultValue: 'Local proxy that wraps Claude/Codex/Gemini OAuth subscriptions',
-      }),
-      disabled: false,
-      onClick: onAddCliProxyApi,
     },
   ];
 
