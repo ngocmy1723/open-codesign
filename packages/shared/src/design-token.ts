@@ -14,7 +14,7 @@ export const DesignTokenV1 = z.object({
   ]),
   name: z.string().min(1),
   value: z.string().min(1),
-  origin: z.enum(['tailwind-config', 'css-vars', 'figma', 'manual', 'pdf', 'dtcg-json']),
+  origin: z.enum(['tailwind-config', 'css-vars', 'figma', 'stitch', 'manual', 'pdf', 'dtcg-json']),
   group: z.string().optional(),
 });
 export type DesignToken = z.infer<typeof DesignTokenV1>;

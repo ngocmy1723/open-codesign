@@ -329,6 +329,29 @@ export const BUILTIN_PROVIDERS: Readonly<Record<SupportedOnboardingProvider, Pro
   },
 } as const;
 
+// ── Integration settings (Figma, Google Stitch) ──────────────────────────────
+
+export const INTEGRATIONS_SCHEMA_VERSION = 1 as const;
+
+export const FigmaSettingsSchema = z.object({
+  enabled: z.boolean().default(false),
+  apiKey: SecretRef.optional(),
+});
+export type FigmaSettings = z.infer<typeof FigmaSettingsSchema>;
+
+export const StitchSettingsSchema = z.object({
+  enabled: z.boolean().default(false),
+  apiKey: SecretRef.optional(),
+});
+export type StitchSettings = z.infer<typeof StitchSettingsSchema>;
+
+export const IntegrationSettingsSchema = z.object({
+  schemaVersion: z.literal(INTEGRATIONS_SCHEMA_VERSION),
+  figma: FigmaSettingsSchema.default({}),
+  stitch: StitchSettingsSchema.default({}),
+});
+export type IntegrationSettings = z.infer<typeof IntegrationSettingsSchema>;
+
 // ── ConfigSchema v3 — canonical on-disk shape ────────────────────────────────
 
 /**
@@ -356,6 +379,7 @@ export const ConfigV3Schema = z.object({
   providers: z.record(z.string(), ProviderEntrySchema).default({}),
   designSystem: StoredDesignSystem.optional(),
   imageGeneration: ImageGenerationSettingsSchema.optional(),
+  integrations: IntegrationSettingsSchema.optional(),
 });
 export type ConfigV3 = z.infer<typeof ConfigV3Schema>;
 
@@ -470,6 +494,7 @@ export function toPersistedV3(cfg: Config | ConfigV3): ConfigV3 {
     providers: cfg.providers,
     ...(cfg.designSystem !== undefined ? { designSystem: cfg.designSystem } : {}),
     ...(cfg.imageGeneration !== undefined ? { imageGeneration: cfg.imageGeneration } : {}),
+    ...(cfg.integrations !== undefined ? { integrations: cfg.integrations } : {}),
   };
 }
 

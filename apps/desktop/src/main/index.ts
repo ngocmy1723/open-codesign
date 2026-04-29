@@ -57,6 +57,7 @@ import {
   toGenerateImageOptions,
 } from './image-generation-settings';
 import { maybeAbortIfRunningFromDmg } from './install-check';
+import { registerIntegrationsIpc } from './integrations-ipc';
 import { registerLocaleIpc } from './locale-ipc';
 import { getLogPath, getLogger, initLogger } from './logger';
 import {
@@ -1355,6 +1356,7 @@ if (!IS_VITEST) {
       registerCodexOAuthIpc();
       registerPreferencesIpc();
       registerImageGenerationSettingsIpc();
+      registerIntegrationsIpc();
       registerExporterIpc(() => mainWindow);
       registerDiagnosticsIpc(diagnosticsDb);
       setupAutoUpdater();

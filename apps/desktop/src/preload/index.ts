@@ -34,11 +34,17 @@ import type {
   TestEndpointResponse,
 } from '../main/connection-ipc';
 import type { ImageGenerationSettingsView } from '../main/image-generation-settings';
+import type {
+  FigmaFileResult,
+  FigmaTokensResult,
+  IntegrationSettingsView,
+} from '../main/integrations-ipc';
 
 export type { ConnectionTestError, ConnectionTestResult, ModelsListResponse, TestEndpointResponse };
 export type { ClaudeCodeUserType, ExternalConfigsDetection };
 export type { CodexOAuthStatus };
 export type { ImageGenerationSettingsView };
+export type { IntegrationSettingsView, FigmaFileResult, FigmaTokensResult };
 
 export interface ValidateKeyResult {
   ok: true;
@@ -348,6 +354,43 @@ const api = {
         'image-generation:v1:update',
         patch,
       ) as Promise<ImageGenerationSettingsView>,
+  },
+  integrations: {
+    getSettings: () =>
+      ipcRenderer.invoke('integrations:v1:get-settings') as Promise<IntegrationSettingsView>,
+    updateSettings: (input: {
+      figma?: { enabled?: boolean; apiKey?: string };
+      stitch?: { enabled?: boolean; apiKey?: string };
+    }) =>
+      ipcRenderer.invoke(
+        'integrations:v1:update-settings',
+        input,
+      ) as Promise<IntegrationSettingsView>,
+    figma: {
+      getFile: (fileKeyOrUrl: string) =>
+        ipcRenderer.invoke('integrations:v1:figma:get-file', {
+          fileKeyOrUrl,
+        }) as Promise<FigmaFileResult>,
+      extractTokens: (fileKeyOrUrl: string) =>
+        ipcRenderer.invoke('integrations:v1:figma:extract-tokens', {
+          fileKeyOrUrl,
+        }) as Promise<FigmaTokensResult>,
+    },
+    stitch: {
+      listProjects: () =>
+        ipcRenderer.invoke('integrations:v1:stitch:list-projects') as Promise<
+          Array<{ id: string; projectId: string; title: string }>
+        >,
+      listScreens: (projectId: string) =>
+        ipcRenderer.invoke('integrations:v1:stitch:list-screens', {
+          projectId,
+        }) as Promise<Array<{ id: string; screenId: string; title: string }>>,
+      importScreen: (projectId: string, screenId: string) =>
+        ipcRenderer.invoke('integrations:v1:stitch:import-screen', {
+          projectId,
+          screenId,
+        }) as Promise<{ html: string; tokens: unknown[]; imageUrl: string }>,
+    },
   },
   codexOAuth: {
     status: () => ipcRenderer.invoke('codex-oauth:v1:status') as Promise<CodexOAuthStatus>,

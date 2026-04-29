@@ -36,6 +36,26 @@ export { loadAllSkills, loadSkillsFromDir } from './skills/index.js';
 export type { LoadAllSkillsOptions } from './skills/index.js';
 
 export { generateViaAgent } from './agent.js';
+
+// ── External integrations (lazy-loaded) ──────────────────────────────────────
+export {
+  FigmaClient,
+  extractFigmaTokens,
+  StitchClient,
+  extractStitchTokens,
+  importStitchScreen,
+} from './integrations/index.js';
+export type {
+  FigmaClientOptions,
+  ExtractFigmaTokensOptions,
+  FigmaFileResponse,
+  FigmaNode,
+  StitchClientOptions,
+  StitchImportOptions,
+  StitchImportResult,
+  StitchProject,
+  StitchScreen,
+} from './integrations/index.js';
 export type { AgentEvent, GenerateViaAgentDeps } from './agent.js';
 export { FRAME_TEMPLATES, type FrameName } from './frames/index.js';
 export { DESIGN_SKILLS, type DesignSkillName } from './design-skills/index.js';
